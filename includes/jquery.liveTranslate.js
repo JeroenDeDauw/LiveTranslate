@@ -8,45 +8,127 @@
 
 ( function ( $, lt ) { $.fn.liveTranslate = function( options ) {
 	
-	var defaults = {
-		languages: {}
-	};
-	
-	$.extend( options, defaults );
-	
-	$.each( this.attr( 'languages' ).split( '||' ), function( i, lang ) {
-		var parts = lang.split( '|' );
-		options.languages[parts[0]] = parts[1]; 
-	} );
-	
 	var _this = this;
 	
-	this.currentLang = this.attr( 'sourcelang' );
+	this.setup = function() {
+		var defaults = {
+			languages: {},
+			sourcelang: 'en'
+		};
+		
+		$.extend( options, defaults );
+		
+		$.each( this.attr( 'languages' ).split( '||' ), function( i, lang ) {
+			var parts = lang.split( '|' );
+			options.languages[parts[0]] = parts[1]; 
+		} );
+		
+		_this.currentLang = this.attr( 'sourcelang' );
+		
+		// For the "show original" feature.
+		_this.originalHtml = false;
+		
+		_this.textAreaElement = document.createElement( 'textarea' );
+		
+		_this.memory = new lt.memory();
+		
+		_this.runningJobs = 0;
+		
+		_this.attr( {
+			style: 'display:inline; float:right',
+		} ).attr( 'class', 'notranslate' );
+		
+		_this.html( lt.msg( 'livetranslate-translate-to' ) );
+		
+		_this.select = $( '<select />' );
+		
+		for ( langCode in options.languages ) {
+			select.append( $( '<option />' ).attr( 'value', langCode ).text( options.languages[langCode] ) );
+		}
+		
+		_this.translateButton = $( '<button />' ).attr( {
+			id: 'livetranslatebutton',
+		} ).text( lt.msg( 'livetranslate-button-translate' ) ).click( function() {
+			$( this ).attr( "disabled", true ).text( lt.msg( 'livetranslate-button-translating' ) );
+			
+			_this.obatinAndInsetSpecialWords( _this.doTranslations );
+		} ); // .button()
+		
+		_this.revertButton = $( '<button />' ).attr( {
+			id: 'ltrevertbutton',
+			style: 'display:none'
+		} ).text( lt.msg( 'livetranslate-button-revert' ) ).click( function() {
+			$( this ).hide();
+		} ); // .button()
+		
+		_this.append( select, translateButton, revertButton );
+	};
 	
-	// For the "show original" feature.
-	this.originalHtml = false;
+	this.doTranslations = function() {
+		_this.runningJobs = 2;
+		
+		_this.doLocalTranslation( _this.completeTranslationProcess );
+		_this.doRemoteTranslation( _this.completeTranslationProcess );
+	};
 	
-	this.textAreaElement = document.createElement( 'textarea' );
+	this.doLocalTranslation = function( callback ) {
+		_this.memory.getTranslations(
+			{
+				source: _this.currentLang,
+				target: _this.select.val(),
+				words: _this.specialWords
+			},
+			function( translations ) {
+				$.each( $( "span.notranslate" ), function( i, v ) {
+					var currentText = $(v).text();
+					
+					if ( translations[currentText] ) {
+						$( v ).text( translations[currentText] );
+					}
+				});
+				
+				callback();
+			}
+		);
+	};
 	
-	this.memory = new lt.memory();
+	this.doRemoteTranslation = function( callback ) {
+		var translator = new translationService();
+		translator.done = _this.completeTranslationProcess;
+		lt.debug( 'Initiating remote translation' );
+		translator.translateElement( $( '#bodyContent' ), sourceLang, targetLang );
+	};
 	
-	this.attr( {
-		style: 'display:inline; float:right',
-	} ).attr( 'class', 'notranslate' );
+	this.completeTranslationProcess = function() {
+		if ( !_this.runningJobs-- ) {
+			
+		}
+	};
 	
-	this.html( lt.msg( 'livetranslate-translate-to' ) );
-	
-	var select = $( '<select />' );
-	
-	for ( langCode in options.languages ) {
-		select.append( $( '<option />' ).attr( 'value', langCode ).text( options.languages[langCode] ) );
+	/**
+	 * Inserts notranslate spans around the words specified in the passed array in the page content.
+	 * 
+	 * @param {Array} words
+	 */
+	this.insertSpecialWords( words ) {
+		for ( i in words ) {
+			$( '#bodyContent *' ).replaceText( 
+				new RegExp( "(\\W)*" + RegExp.escape( words[i] ) + "(\\W)*", "g" ),
+				function( str ) {
+					return '<span class="notranslate">' + str + '</span>';
+				}
+			);
+		}
 	}
 	
-	var button = $( '<button />' ).attr( {
-		id: 'ltrevertbutton'
-	} ).text( lt.msg( 'livetranslate-button-revert' ) ); // .button()
-	
-	this.append( select, button );
+	this.obatinAndInsetSpecialWords = function( callback ) {
+		// TODO: only run at first translation
+		_this.memory.getSpecialWords( _this.currentLang, function( specialWords ) {
+			_this.specialWords = specialWords;
+			_this.insertSpecialWords( specialWords );
+			callback();
+		} );
+	}
 	
 //	/**
 //	 * Disables the translation button and then either kicks of insertion of
@@ -237,6 +319,8 @@
 //		$( '#livetranslatebutton' ).attr( "disabled", false ).text( lt.msg( 'livetranslate-button-translate' ) );
 //		$( '#ltrevertbutton' ).css( 'display', 'inline' );
 //	}
+	
+	this.setup();
 	
 	return this;
 	
