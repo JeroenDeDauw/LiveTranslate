@@ -6,7 +6,7 @@
  * @author Jeroen De Dauw <jeroendedauw at gmail dot com>
  */
 
-( function( lt ) {
+( function( $, lt ) {
 	
 	lt.memory = function( options ) {
 		var _this = this;
@@ -29,20 +29,24 @@
 				return false;
 			}
 		},
-	
-		hasLocalStorage: function() {
-			if ( !_this.canUseLocalStorage() ) {
+
+		hasLocalStorage: function( itemName ) {
+			return localStorage.getItem( 'lt_hash' ) !== null;
+		},
+		
+		getMemoryHashes: function( args, callback ) {
+			var defaults = {
+				apiPath: window.wgScriptPath
+			};
+			
+			args = $.extend( {}, defaults, args );
+			
+			if ( !this.canUseLocalStorage() ) {
 				return false;
 			}
 			
-			var memory = localStorage.getItem( 'lt_memory' );
-			debugger;
-			return memory;
-		},
-		
-		getMemoryHashes: function( callback ) {
 			$.getJSON(
-				wgScriptPath + '/api.php',
+				args.apiPath + '/api.php',
 				{
 					'action': 'translationmemories',
 					'format': 'json',
@@ -60,11 +64,18 @@
 		},
 		
 		localStorageIsValid: function() {
-			if ( !_this.hasLocalStorage() ) {
+			if ( !this.hasLocalStorage() ) {
 				return false;
 			}
 			
-			_this.getMemoryHashes();
+			this.getMemoryHashes(
+				{},
+				function( memories ) {
+					m = JSON.stringify( memories );
+					debugger;
+					localStorage.getItem( 'lt_hash' ) == memories;
+				}
+			);
 		},
 		
 		obtainTranslationsFromServer: function( args, callback ) {
@@ -72,7 +83,7 @@
 				offset: -1,
 				words: [],
 				language: 'en',
-				apiPath: wgScriptPath
+				apiPath: window.wgScriptPath
 			};
 			
 			args = $.extend( {}, defaults, args );
@@ -100,7 +111,7 @@
 				offset: -1,
 				translations: [],
 				language: 'en',
-				apiPath: wgScriptPath
+				apiPath: window.wgScriptPath
 			};
 			
 			args = $.extend( {}, defaults, args );
@@ -145,12 +156,12 @@
 		
 		writeWordsToLS: function() {
 			// TODO
-			localStorage.setItem( 'lt_words', JSON.stringify( _this.words ) )
+			localStorage.setItem( 'lt_words', JSON.stringify( this.words ) )
 		},
 		
 		writeTranslationsToLS: function() {
 			// TODO
-			localStorage.setItem( 'lt_translations', JSON.stringify( _this.translations ) )
+			localStorage.setItem( 'lt_translations', JSON.stringify( this.translations ) )
 		},
 		
 		/**
@@ -169,13 +180,13 @@
 			sourceLang = args.source;
 			targetLang = args.target;
 			
-			if ( !_this.translations.sourceLang ) {
-				_this.translations.sourceLang = {};
+			if ( !this.translations.sourceLang ) {
+				this.translations.sourceLang = {};
 			}
 			// TODO: diff needed words w/ stored ones, and only request unknowns
-			if ( !_this.translations.sourceLang.targetLang ) {
-				if ( _this.canUseLocalStorage() && _this.localStorageIsValid( 'words' ) ) {
-					_this.obtainFromLS( 
+			if ( !this.translations.sourceLang.targetLang ) {
+				if ( this.canUseLocalStorage() && this.localStorageIsValid( 'words' ) ) {
+					this.obtainFromLS( 
 						'words',
 						function( translations ) {
 							_this.translations.sourceLang.targetLang = translations;
@@ -184,7 +195,7 @@
 					);
 				}
 				else {
-					_this.obtainWordssFromServer( args, function( words ) {
+					this.obtainWordssFromServer( args, function( words ) {
 						_this.words.language = words;
 						callback( words );
 						
@@ -197,9 +208,9 @@
 		},
 		
 		getSpecialWords: function( language, callback ) {
-			if ( !_this.words.language ) {
-				if ( _this.canUseLocalStorage() && _this.localStorageIsValid( 'translations' ) ) {
-					_this.obtainFromLS( 
+			if ( !this.words.language ) {
+				if ( this.canUseLocalStorage() && this.localStorageIsValid( 'translations' ) ) {
+					this.obtainFromLS( 
 						'translations',
 						function( words ) {
 							_this.words.language = words;
@@ -208,7 +219,7 @@
 					);
 				}
 				else {
-					_this.obtainWordsFromServer( -1, [], function( words ) {
+					this.obtainWordsFromServer( -1, [], function( words ) {
 						_this.words.language = words;
 						callback( words );
 						
@@ -219,8 +230,8 @@
 				}				
 			}
 			
-			return _this.translations;
+			return this.translations;
 		}
 	};
 	
-}) ( window.liveTranslate );
+}) ( jQuery, window.liveTranslate );

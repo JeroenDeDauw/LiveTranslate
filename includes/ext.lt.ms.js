@@ -6,7 +6,7 @@
  * @author Jeroen De Dauw <jeroendedauw at gmail dot com>
  */
 
-(function( $ ){ window.translationService = function() {
+(function( $, lt ){ window.translationService = function() {
 	
 	var self = this;
 	
@@ -29,7 +29,7 @@
 	 * @param {DOM element} element
 	 */
 	this.translateChunk = function( untranslatedsentences, chunks, currentMaxSize, sourceLang, targetLang, element ) {
-		ltdebug( 'MS: Translating chunk' );
+		lt.debug( 'MS: Translating chunk' );
 		var remainingPart = false;
 		var partToUse = false;
 		var sentenceCount = 0;
@@ -85,7 +85,7 @@
 		var tailingSpace = ( chunk.length > 1 && chunk.substr( chunk.length - 1, 1 ) == ' ' ) ? ' ' : '';
 		
 		var chunckTranslationDone = function( translation ) {
-			ltdebug( 'MS: Translated chunk' );
+			lt.debug( 'MS: Translated chunk' );
 			
 			if ( translation ) {
 				chunks.push( leadingSpace + translation + tailingSpace );
@@ -100,7 +100,7 @@
 				window.textAreaElement.innerHTML = chunks.join( '' ); // This is a hack to decode quotes.
 				element.replaceData( 0, element.length, window.textAreaElement.value );
 
-				ltdebug( 'MS: Translated element' );
+				lt.debug( 'MS: Translated element' );
 				self.handleTranslationCompletion( targetLang );
 			}
 			else {
@@ -130,17 +130,17 @@
 	 * @param {string} targetLang
 	 */
 	this.translateElement = function( element, sourceLang, targetLang ) {
-		ltdebug( 'MS: Translating element' );
+		lt.debug( 'MS: Translating element' );
 		this.runningJobs++;
 		
 		var maxChunkLength = 500;
 
 		element.contents().each( function() {
-			ltdebug( 'MS: Element conent item' );
+			lt.debug( 'MS: Element conent item' );
 			
 			// If it's a text node, then translate it.
 			if ( this.nodeType == 3 && typeof this.data === 'string' && $.trim( this.data ).length > 0 ) {
-				ltdebug( 'MS: Found content node' );
+				lt.debug( 'MS: Found content node' );
 				
 				self.runningJobs++;
 				
@@ -170,11 +170,11 @@
 				&& !$( this ).hasClass( 'notranslate' ) && !$( this ).hasClass( 'printfooter' )
 				&& $( this ).text().length > 0 ) {
 				
-				ltdebug( 'MS: Found child node' );
+				lt.debug( 'MS: Found child node' );
 				self.translateElement( $( this ), sourceLang, targetLang );
 			}
 			else {
-				ltdebug( 'MS: Found ignore node' );
+				lt.debug( 'MS: Found ignore node' );
 			}
 		} );
 		
@@ -182,16 +182,16 @@
 	}
 	
 	this.invokeDone = function( targetLang ) {
-		ltdebug( 'MS: translation process done' );
-		ltdebug( this.runningJobs );
+		lt.debug( 'MS: translation process done' );
+		lt.debug( this.runningJobs );
 		this.runningJobs = 0;
 		this.done( targetLang );		
 	}
 	
 	this.checkForIdleness = function( targetLang, hits ) {
-		ltdebug( 'MS: checkForIdleness' );
-		ltdebug( 'MS: last + 250: ' + ( this.lastCompletion + 250 ) );
-		ltdebug( 'MS: now: ' + (new Date()).getTime() );
+		lt.debug( 'MS: checkForIdleness' );
+		lt.debug( 'MS: last + 250: ' + ( this.lastCompletion + 250 ) );
+		lt.debug( 'MS: now: ' + (new Date()).getTime() );
 		
 		if ( this.lastCompletion + 250 < (new Date()).getTime() ) {
 			hits++;
@@ -231,4 +231,4 @@
 	}
 	
 	
-}; })( jQuery );
+}; })( jQuery, window.liveTranslate );

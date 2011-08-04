@@ -9,7 +9,7 @@
 google.load("language", "1");
 google.setOnLoadCallback(function(){google.language.getBranding("googlebranding");});
 
-(function( $ ){ window.translationService = function() {
+(function( $, lt ){ window.translationService = function() {
 	
 	var self = this;
 	
@@ -32,7 +32,7 @@ google.setOnLoadCallback(function(){google.language.getBranding("googlebranding"
 	 * @param {DOM element} element
 	 */
 	this.translateChunk = function( untranslatedsentences, chunks, currentMaxSize, sourceLang, targetLang, element ) {
-		ltdebug( 'Google: Translating chunk' );
+		lt.debug( 'Google: Translating chunk' );
 		var remainingPart = false;
 		var partToUse = false;
 		var sentenceCount = 0;
@@ -92,7 +92,7 @@ google.setOnLoadCallback(function(){google.language.getBranding("googlebranding"
 			sourceLang,
 			targetLang,
 			function(result) {
-				ltdebug( 'Google: Translated chunk' );
+				lt.debug( 'Google: Translated chunk' );
 				
 				if ( result.translation ) {
 					chunks.push( leadingSpace + result.translation + tailingSpace );
@@ -125,17 +125,17 @@ google.setOnLoadCallback(function(){google.language.getBranding("googlebranding"
 	 * @param {string} targetLang
 	 */
 	this.translateElement = function( element, sourceLang, targetLang ) {
-		ltdebug( 'Google: Translating element' );
+		lt.debug( 'Google: Translating element' );
 		this.runningJobs++;
 		
 		var maxChunkLength = 500;
 
 		element.contents().each( function() {
-			ltdebug( 'Google: Element conent item' );
+			lt.debug( 'Google: Element conent item' );
 			
 			// If it's a text node, then translate it.
 			if ( this.nodeType == 3 && typeof this.data === 'string' && $.trim( this.data ).length > 0 ) {
-				ltdebug( 'Google: Found content node' );
+				lt.debug( 'Google: Found content node' );
 				
 				self.runningJobs++;
 				self.translateChunk(
@@ -153,11 +153,11 @@ google.setOnLoadCallback(function(){google.language.getBranding("googlebranding"
 				&& !$( this ).hasClass( 'notranslate' ) && !$( this ).hasClass( 'printfooter' )
 				&& $( this ).text().length > 0 ) {
 				
-				ltdebug( 'Google: Found child node' );
+				lt.debug( 'Google: Found child node' );
 				self.translateElement( $( this ), sourceLang, targetLang );
 			}
 			else {
-				ltdebug( 'Google: Found ignore node' );
+				lt.debug( 'Google: Found ignore node' );
 			}
 		} );
 		
@@ -173,9 +173,9 @@ google.setOnLoadCallback(function(){google.language.getBranding("googlebranding"
 	 */
 	this.handleTranslationCompletion = function( targetLang ) {
 		if ( !--this.runningJobs ) {
-			ltdebug( 'Google: translation process done' );
+			lt.debug( 'Google: translation process done' );
 			this.done( targetLang );
 		}
 	}
 	
-}; })( jQuery );
+}; })( jQuery, window.liveTranslate );

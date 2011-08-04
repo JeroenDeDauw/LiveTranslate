@@ -43,7 +43,7 @@
 		_this.select = $( '<select />' );
 		
 		for ( langCode in options.languages ) {
-			select.append( $( '<option />' ).attr( 'value', langCode ).text( options.languages[langCode] ) );
+			_this.select.append( $( '<option />' ).attr( 'value', langCode ).text( options.languages[langCode] ) );
 		}
 		
 		_this.translateButton = $( '<button />' ).attr( {
@@ -61,7 +61,7 @@
 			$( this ).hide();
 		} ); // .button()
 		
-		_this.append( select, translateButton, revertButton );
+		_this.append( _this.select, _this.translateButton, _this.revertButton );
 	};
 	
 	this.doTranslations = function() {
@@ -101,7 +101,7 @@
 	
 	this.completeTranslationProcess = function() {
 		if ( !_this.runningJobs-- ) {
-			
+			alert('done');
 		}
 	};
 	
@@ -110,7 +110,7 @@
 	 * 
 	 * @param {Array} words
 	 */
-	this.insertSpecialWords( words ) {
+	this.insertSpecialWords = function( words ) {
 		for ( i in words ) {
 			$( '#bodyContent *' ).replaceText( 
 				new RegExp( "(\\W)*" + RegExp.escape( words[i] ) + "(\\W)*", "g" ),
@@ -119,16 +119,17 @@
 				}
 			);
 		}
-	}
+	};
 	
 	this.obatinAndInsetSpecialWords = function( callback ) {
 		// TODO: only run at first translation
 		_this.memory.getSpecialWords( _this.currentLang, function( specialWords ) {
 			_this.specialWords = specialWords;
 			_this.insertSpecialWords( specialWords );
+			
 			callback();
 		} );
-	}
+	};
 	
 //	/**
 //	 * Disables the translation button and then either kicks of insertion of
