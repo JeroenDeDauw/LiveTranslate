@@ -8,7 +8,7 @@
 
 window.liveTranslate = new( function() {
 	
-	function debug( message ) {
+	this.debug = function( message ) {
 		if ( window.ltDebugMessages ) {
 			if ( typeof console === 'undefined' ) {
 				document.title = 'Live Translate: ' + message;
@@ -19,7 +19,7 @@ window.liveTranslate = new( function() {
 		}
 	}
 	
-	function msg() {
+	this.msg = function() {
 		if ( typeof mediaWiki === 'undefined' ) {
 			message = window.wgLTEMessages[arguments[0]];
 			
@@ -30,7 +30,7 @@ window.liveTranslate = new( function() {
 			return message;
 		}
 		else {
-			return mediaWiki.msg( arguments );
+			return mediaWiki.msg.apply( this, arguments );
 		}
 	}
 	
@@ -38,6 +38,6 @@ window.liveTranslate = new( function() {
 
 (function( $ ) { $( document ).ready( function() {
 
-	$( '.livetranslatecontrol' ).liveTranslate( {} );
+	$( '#livetranslatediv' ).liveTranslate( {} );
 	
 } ); })( jQuery );

@@ -30,7 +30,6 @@ final class LiveTranslateHooks {
 
 		$currentLang = LiveTranslateFunctions::getCurrentLang( $title );
 
-		// FIXME: Hitting the db on every page load should be avoided
 		if ( in_array( $title->getFullText(), LiveTranslateFunctions::getLocalMemoryNames() ) ) {
 			self::displayDictionaryPage( $article, $title );
 			$outputDone = true; // The translations themselves should not be shown.
@@ -154,24 +153,10 @@ final class LiveTranslateHooks {
 	protected static function displayTranslationControl( $currentLang ) {
 		global $wgOut;
 
-		$divContents = htmlspecialchars( wfMsg( 'livetranslate-translate-to' ) ) .
-			'&#160;' .
-			LiveTranslateFunctions::getLanguageSelector( $currentLang ) .
-			'&#160;' .
-			Html::element(
-				'button',
-				array( 'id' => 'livetranslatebutton' ),
-				wfMsg( 'livetranslate-button-translate' )
-			) .
-			'&#160;' .
-			Html::element(
-				'button',
-				array( 'id' => 'ltrevertbutton', 'style' => 'display:none' ),
-				wfMsg( 'livetranslate-button-revert' )
-			);
-
-		if ( $GLOBALS['egLiveTranslateService'] == LTS_GOOGLE ) {
-			$divContents .= '<br /><br /><div id="googlebranding" style="display:inline; position:absolute; right: 0px"></div>';
+		$langs = array();
+		
+		foreach ( LiveTranslateFunctions::getLanguages( $currentLang ) as $label => $code ) {
+			$langs[] = "$code|$label";
 		}
 
 		$wgOut->addHTML(
@@ -179,11 +164,9 @@ final class LiveTranslateHooks {
 				'div',
 				array(
 					'id' => 'livetranslatediv',
-					'style' => 'display:inline; float:right',
-					'class' => 'notranslate',
-					'sourcelang' => $currentLang
-				),
-				$divContents
+					'sourcelang' => $currentLang,
+					'languages' => implode( '||', $langs )
+				)
 			)
 		);
 

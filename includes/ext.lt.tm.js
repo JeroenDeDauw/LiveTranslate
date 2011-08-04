@@ -131,6 +131,7 @@
 					
 					if ( data['query-continue'] ) {
 						obtainAndInsertTranslations( data['query-continue'].livetranslate.ltcontinue );
+					}
 					else {
 						callback( words );
 					}

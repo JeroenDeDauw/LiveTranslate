@@ -133,15 +133,15 @@ final class LiveTranslateFunctions {
 	}
 	
 	/**
-	 * Returns the HTML for a language selector.
+	 * Returns a list of languages that can be translated to.
 	 * 
-	 * @since 0.1
+	 * @since 1.2
 	 * 
 	 * @param string $currentLang
 	 * 
-	 * @return string
+	 * @return array
 	 */
-	public static function getLanguageSelector( $currentLang ) {
+	public static function getLanguages( $currentLang ) {
 		global $wgUser, $wgLanguageCode, $egLiveTranslateLanguages;
 		
 		$allowedLanguages = array_merge( $egLiveTranslateLanguages, array( $currentLang ) );
@@ -155,7 +155,7 @@ final class LiveTranslateFunctions {
 			
 			if ( array_key_exists( $userLang, $languages ) && in_array( $userLang, $allowedLanguages ) ) {
 				$targetLang = $userLang;
-			}			
+			}
 		}
 		
 		$options = array();
@@ -167,36 +167,8 @@ final class LiveTranslateFunctions {
 				$options[$display] = $code;				
 			}
 		}
-		
-		$languageSelector = new HTMLSelectField( array(
-			'id' => 'livetranslatelang',
-			'fieldname' => 'language',
-			'options' => $options
-		) );
 
-		return $languageSelector->getInputHTML( $targetLang );
-	}
-	
-	/**
-	 * Gets a list of all available languages.
-	 * 
-	 * @since 0.1
-	 * 
-	 * @return array
-	 */
-	public static function getAvailableLanguages() {
-		$dbr = wfGetDB( DB_SLAVE );
-			
-		$destinationLangs = array();
-			
-		// TODO: fix index
-		$res = $dbr->query( 'SELECT DISTINCT word_language FROM ' . $dbr->tableName( 'live_translate' ) );
-		
-		while ( $lang = $dbr->fetchObject( $res ) ) {
-			$destinationLangs[] = $lang->word_language;
-		}
-
-		return $destinationLangs;
+		return $options;
 	}
 	
 	/**
@@ -207,7 +179,7 @@ final class LiveTranslateFunctions {
 	 * 
 	 * @return array LANGUAGE_NAME => 'code' 
 	 */
-	public static function getGTSupportedLanguages() { //Language::getLanguageNames( false );
+	public static function getGTSupportedLanguages() {
 		return array(
 			'AFRIKAANS' => 'af',
 			'ALBANIAN' => 'sq',
