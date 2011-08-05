@@ -305,6 +305,37 @@ $messages['dsb'] = array(
 	'livetranslate-importtms-param-miscmatch' => 'Njedobry poměr mjazy licbu městnow a typow',
 );
 
+/** Spanish (Español)
+ * @author Fitoschido
+ */
+$messages['es'] = array(
+	'livetranslate-desc' => 'Permite la traducción instantánea de contenido utilizando el servicio de Google Translate',
+	'right-managetms' => '[[Special:SpecialLiveTranslate|Modificar]] la lista de memorias de traducción',
+	'group-tmxadmin' => 'Administradores de TMX',
+	'group-tmxadmin-member' => 'Administrador de TMX',
+	'livetranslate-translate-to' => 'Traducir esta página a',
+	'livetranslate-button-translate' => 'Traducir',
+	'livetranslate-button-translating' => 'Traduciendo...',
+	'livetranslate-button-revert' => 'Mostrar original',
+	'livetranslate-dictionary-error' => 'No se pudo obtener el diccionario de traducción instantánea. Ninguna palabra será tratada especialmente durante el proceso de traducción.',
+	'livetranslate-dictionary-empty' => 'No hay palabras en el diccionario aún. Pulsa en la pestaña «editar» para añadir algunas.',
+	'livetranslate-dictionary-goto-edit' => 'Modificar las memorias de traducción.',
+	'special-livetranslate' => 'Traducción instantánea',
+	'livetranslate-tmtype-ltf' => 'Formato de traducción instantánea',
+	'livetranslate-tmtype-tmx' => 'Translation Memory eXchange',
+	'livetranslate-tmtype-gcsv' => 'CSV de Google',
+	'livetranslate-special-no-tms-yet' => 'No hay memorias de traducción aún.',
+	'livetranslate-special-button' => 'Guardar y actualizar',
+	'livetranslate-special-type' => 'Tipo',
+	'livetranslate-special-location' => 'Ubicación',
+	'livetranslate-special-remove' => 'Quitar',
+	'livetranslate-special-local' => 'Local',
+	'livetranslate-special-add-tm' => 'Añadir una memoria de traducción nueva',
+	'livetranslate-special-current-tms' => 'Memorias de traducción existentes',
+	'livetranslate-special-tms-update' => 'Actualizar memorias de traducción',
+	'livetranslate-special-update' => 'Actualizar memorias de traducción',
+);
+
 /** Basque (Euskara)
  * @author An13sa
  */

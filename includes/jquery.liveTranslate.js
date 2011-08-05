@@ -242,17 +242,6 @@
 //	$( '#livetranslatebutton' ).click( setupTranslationFeatures );	
 //	$( '#ltrevertbutton' ).click( showOriginal );	
 //	
-//	/**
-//	 * Regex text escaping function.
-//	 * Borrowed from http://simonwillison.net/2006/Jan/20/escape/
-//	 */
-//	RegExp.escape = function(text) {
-//		if (!arguments.callee.sRE) {
-//			var specials = [  '/', '.', '*', '+', '?', '|', '(', ')', '[', ']', '{', '}', '\\' ];
-//		    arguments.callee.sRE = new RegExp( '(\\' + specials.join('|\\') + ')', 'g' );
-//		}
-//		return text.replace(arguments.callee.sRE, '\\$1');
-//	}
 //	
 //	/**
 //	 * Inserts notranslate spans around the words specified in the passed array in the page content.

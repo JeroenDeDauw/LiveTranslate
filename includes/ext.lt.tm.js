@@ -31,7 +31,7 @@
 		},
 
 		hasLocalStorage: function( itemName ) {
-			return localStorage.getItem( 'lt_hash' ) !== null;
+			return localStorage.getItem( itemName ) !== null;
 		},
 		
 		getMemoryHashes: function( args, callback ) {
@@ -60,12 +60,12 @@
 						// TODO
 					}
 				}
-			);		
+			);	
 		},
 		
-		localStorageIsValid: function() {
-			if ( !this.hasLocalStorage() ) {
-				return false;
+		localStorageIsValid: function( itemName, callback ) {
+			if ( !this.hasLocalStorage( itemName ) ) {
+				return callback.call( this, false );
 			}
 			
 			this.getMemoryHashes(
@@ -73,7 +73,7 @@
 				function( memories ) {
 					m = JSON.stringify( memories );
 					debugger;
-					localStorage.getItem( 'lt_hash' ) == memories;
+					callback.call( this, localStorage.getItem( 'lt_hash' ) == memories );
 				}
 			);
 		},
@@ -109,7 +109,7 @@
 		obtainWordsFromServer: function( args, callback ) {
 			var defaults = {
 				offset: -1,
-				translations: [],
+				allWords: [],
 				language: 'en',
 				apiPath: window.wgScriptPath
 			};
@@ -127,24 +127,33 @@
 				requestArgs['ltcontinue'] = args.offset;
 			}
 			
+			var self = this;
+			
 			$.getJSON(
 				args.apiPath + '/api.php',
 				requestArgs,
 				function( data ) {
-					words = [];
-					
 					if ( data.words ) {
-						words = data.words;
+						args.allWords.push.apply( data.words );
 					}
 					else {
 						// TODO
 					}
 					
 					if ( data['query-continue'] ) {
-						obtainAndInsertTranslations( data['query-continue'].livetranslate.ltcontinue );
+						debugger;
+						self.obtainWordsFromServer(
+							{
+							offset: data['query-continue'].livetranslate.ltcontinue,
+							language: args.language,
+							allWords: args.allWords
+							},
+							callback
+						);
 					}
 					else {
-						callback( words );
+						alert('hax');
+						callback.call( _this, args.allWords );
 					}
 				}
 			);
@@ -183,50 +192,81 @@
 			if ( !this.translations.sourceLang ) {
 				this.translations.sourceLang = {};
 			}
+			
 			// TODO: diff needed words w/ stored ones, and only request unknowns
+			
+			this.getFromServer = function() {
+				self.obtainTranslationsFromServer( args, function( words ) {
+					_this.words.language = words;
+					callback( words );
+					
+					if ( _this.canUseLocalStorage() ) {
+						_this.writeWordsToLS();
+					}
+				} );
+			}
+			
 			if ( !this.translations.sourceLang.targetLang ) {
-				if ( this.canUseLocalStorage() && this.localStorageIsValid( 'words' ) ) {
-					this.obtainFromLS( 
-						'words',
-						function( translations ) {
-							_this.translations.sourceLang.targetLang = translations;
-							callback( translations );
+				if ( this.canUseLocalStorage() ) {
+					this.localStorageIsValid( 'words', function( isValid ) {
+						if ( isValid ) {
+							_this.obtainFromLS( 
+								'words',
+								function( translations ) {
+									_this.translations.sourceLang.targetLang = translations;
+									callback( translations );
+								}
+							);
 						}
-					);
-				}
-				else {
-					this.obtainWordssFromServer( args, function( words ) {
-						_this.words.language = words;
-						callback( words );
-						
-						if ( _this.canUseLocalStorage() ) {
-							_this.writeWordsToLS();
+						else {
+							getFromServer();
 						}
 					} );
+				}
+				else {
+					getFromServer();
 				}
 			}
 		},
 		
 		getSpecialWords: function( language, callback ) {
 			if ( !this.words.language ) {
-				if ( this.canUseLocalStorage() && this.localStorageIsValid( 'translations' ) ) {
-					this.obtainFromLS( 
-						'translations',
-						function( words ) {
-							_this.words.language = words;
-							callback( words );
+				if ( this.canUseLocalStorage() ) {
+					var foo = 'bar';
+					
+					this.localStorageIsValid( 'translations', function( isValid ) {
+						if ( isValid ) {
+							_this.obtainFromLS( 
+								'translations',
+								function( words ) {
+									_this.words.language = words;
+									callback( words );
+								}
+							);
 						}
-					);
-				}
-				else {
-					this.obtainWordsFromServer( -1, [], function( words ) {
-						_this.words.language = words;
-						callback( words );
-						
-						if ( _this.canUseLocalStorage() ) {
-							_this.writeWordsToLS();
+						else {
+							alert('bar');
+							
+							this.obtainWordsFromServer(
+								{
+									language: language
+								},
+								function( words ) {
+									alert('baz');
+									this.words.language = words;
+									
+									if ( this.canUseLocalStorage() ) {
+										this.writeWordsToLS();
+									}
+									alert('foo');
+									callback( words );
+								}
+							);
 						}
 					} );
+				}
+				else {
+					//getFromServer();
 				}				
 			}
 			
