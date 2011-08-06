@@ -124,6 +124,7 @@
 	this.obatinAndInsetSpecialWords = function( callback ) {
 		// TODO: only run at first translation
 		_this.memory.getSpecialWords( _this.currentLang, function( specialWords ) {
+			debugger;
 			_this.specialWords = specialWords;
 			_this.insertSpecialWords( specialWords );
 			

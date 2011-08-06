@@ -134,14 +134,13 @@
 				requestArgs,
 				function( data ) {
 					if ( data.words ) {
-						args.allWords.push.apply( data.words );
+						args.allWords.push.apply( args.allWords, data.words );
 					}
 					else {
 						// TODO
 					}
 					
 					if ( data['query-continue'] ) {
-						debugger;
 						self.obtainWordsFromServer(
 							{
 							offset: data['query-continue'].livetranslate.ltcontinue,
@@ -152,8 +151,8 @@
 						);
 					}
 					else {
-						alert('hax');
-						callback.call( _this, args.allWords );
+						lt.debug( 'obtained special words' );
+						callback.call( self, args.allWords );
 					}
 				}
 			);
@@ -230,10 +229,10 @@
 		},
 		
 		getSpecialWords: function( language, callback ) {
+			var caller = arguments.callee.caller;
+			
 			if ( !this.words.language ) {
 				if ( this.canUseLocalStorage() ) {
-					var foo = 'bar';
-					
 					this.localStorageIsValid( 'translations', function( isValid ) {
 						if ( isValid ) {
 							_this.obtainFromLS( 
@@ -245,21 +244,18 @@
 							);
 						}
 						else {
-							alert('bar');
-							
 							this.obtainWordsFromServer(
 								{
 									language: language
 								},
 								function( words ) {
-									alert('baz');
 									this.words.language = words;
 									
 									if ( this.canUseLocalStorage() ) {
 										this.writeWordsToLS();
 									}
-									alert('foo');
-									callback( words );
+									debugger;
+									callback.call( caller, words );
 								}
 							);
 						}
