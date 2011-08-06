@@ -151,7 +151,6 @@
 						);
 					}
 					else {
-						lt.debug( 'obtained special words' );
 						callback.call( self, args.allWords );
 					}
 				}
@@ -254,7 +253,8 @@
 									if ( this.canUseLocalStorage() ) {
 										this.writeWordsToLS();
 									}
-									debugger;
+									
+									lt.debug( 'tm: obtained special words' );
 									callback.call( caller, words );
 								}
 							);

@@ -65,13 +65,16 @@
 	};
 	
 	this.doTranslations = function() {
+		debugger;
 		_this.runningJobs = 2;
 		
 		_this.doLocalTranslation( _this.completeTranslationProcess );
-		_this.doRemoteTranslation( _this.completeTranslationProcess );
+		//_this.doRemoteTranslation( _this.completeTranslationProcess );
 	};
 	
 	this.doLocalTranslation = function( callback ) {
+		var caller = arguments.callee.caller;
+		
 		_this.memory.getTranslations(
 			{
 				source: _this.currentLang,
@@ -87,7 +90,7 @@
 					}
 				});
 				
-				callback();
+				callback.call( caller );
 			}
 		);
 	};
@@ -100,8 +103,9 @@
 	};
 	
 	this.completeTranslationProcess = function() {
+		debugger;
 		if ( !_this.runningJobs-- ) {
-			alert('done');
+			lt.debug('done');
 		}
 	};
 	
@@ -111,6 +115,8 @@
 	 * @param {Array} words
 	 */
 	this.insertSpecialWords = function( words ) {
+		lt.debug( 'inserting special words' );
+		
 		for ( i in words ) {
 			$( '#bodyContent *' ).replaceText( 
 				new RegExp( "(\\W)*" + RegExp.escape( words[i] ) + "(\\W)*", "g" ),
@@ -122,13 +128,15 @@
 	};
 	
 	this.obatinAndInsetSpecialWords = function( callback ) {
+		var caller = arguments.callee.caller;
+		
 		// TODO: only run at first translation
 		_this.memory.getSpecialWords( _this.currentLang, function( specialWords ) {
-			debugger;
+			
 			_this.specialWords = specialWords;
 			_this.insertSpecialWords( specialWords );
 			
-			callback();
+			callback.call( caller );
 		} );
 	};
 	
