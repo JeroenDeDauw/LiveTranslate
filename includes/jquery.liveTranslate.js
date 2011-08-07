@@ -73,8 +73,6 @@
 	};
 	
 	this.doLocalTranslation = function( callback ) {
-		var caller = arguments.callee.caller;
-		
 		_this.memory.getTranslations(
 			{
 				source: _this.currentLang,
@@ -90,7 +88,7 @@
 					}
 				});
 				
-				callback.call( caller );
+				callback();
 			}
 		);
 	};
@@ -127,14 +125,12 @@
 	};
 	
 	this.obatinAndInsetSpecialWords = function( callback ) {
-		var caller = arguments.callee.caller;
-		
 		// TODO: only run at first translation
 		_this.memory.getSpecialWords( _this.currentLang, function( specialWords ) {
 			_this.specialWords = specialWords;
 			_this.insertSpecialWords( specialWords );
 			
-			callback.call( caller );
+			callback();
 		} );
 	};
 	

@@ -4,10 +4,22 @@
  * 
  * @licence GNU GPL v3 or later
  * @author Jeroen De Dauw <jeroendedauw at gmail dot com>
+ * 
+ * This file holds the lt.memory class.
  */
 
 ( function( $, lt ) {
 	
+	/**
+	 * An lt.memory acts as abstraction layer via which special words
+	 * (words for which a translation is specified in the wiki) and
+	 * translations of those special words can be accessed. It takes
+	 * care of obtaining these via the API and utilizing caching in 
+	 * memory and LocalStorage where appropriate and possible.
+	 * 
+	 * @constructor
+	 * @since 1.2
+	 */
 	lt.memory = function( options ) {
 		var _this = this;
 		
@@ -29,7 +41,15 @@
 	};
 	
 	lt.memory.prototype = {
-			
+		
+		/**
+		 * Returns if LocalStorage can be used or not.
+		 * 
+		 * @protected
+		 * @since 1.2 
+		 * 
+		 * @return {boolean}
+		 */
 		canUseLocalStorage: function() {
 			try {
 				return 'localStorage' in window && window['localStorage'] !== null;
@@ -51,12 +71,11 @@
 		},
 		
 		removeFromLS: function( itemName ) {
-			return localStorage.removeItem( this.options.lsprefix +  itemName );
+			lt.debug( 'tm: removing item from LS: ' + this.options.lsprefix + itemName );
+			localStorage.removeItem( this.options.lsprefix +  itemName );
 		},
 		
 		getMemoryHashes: function( args, callback ) {
-			var caller = arguments.callee.caller;
-			
 			var defaults = {
 				apiPath: window.wgScriptPath
 			};
@@ -73,7 +92,7 @@
 				},
 				function( data ) {
 					if ( data.memories ) {
-						callback.call( caller, data.memories );
+						callback( data.memories );
 					}
 					else {
 						lt.debug( 'tm: failed to fetch memory hash' );
@@ -100,10 +119,9 @@
 		
 		cleanLocalStorage: function( options, callback ) {
 			options = $.extend( {}, { forceCheck: false }, options );
-			var caller = arguments.callee.caller;
 			
 			if ( this.cleanedLS && !options.forceCheck ) {
-				callback.call( caller );
+				callback();
 			}
 			else {
 				var _this = this;
@@ -116,13 +134,14 @@
 							lt.debug( 'tm: memory hashes obtained: match' );
 						}
 						else {
-							_this.removeFromLS.apply( _this, [ 'words', 'translations' ] );
+							_this.removeFromLS.( 'words' );
+							_this.removeFromLS.( 'translations' );
 							_this.writeToLS( 'hash', memories );
 							lt.debug( 'tm: memory hashes obtained: no match; LS cleared' );
 						}
 						
 						_this.cleanedLS = true;
-						callback.call( caller );
+						callback();
 					}
 				);
 			}
@@ -214,6 +233,7 @@
 		 * 
 		 */
 		getTranslations: function( args, callback ) {
+			var _this = this;
 			
 			var defaults = {
 				source: 'en',
@@ -223,37 +243,35 @@
 			
 			args = $.extend( {}, defaults, args );
 			
-			sourceLang = args.source;
-			targetLang = args.target;
-			
-			if ( !this.translations.sourceLang ) {
-				this.translations.sourceLang = {};
+			if ( !this.translations[args.source] ) {
+				this.translations[args.source] = {};
 			}
 			
 			// TODO: diff needed words w/ stored ones, and only request unknowns
 			
-			this.getFromServer = function() {
-				self.obtainTranslationsFromServer( args, function( words ) {
-					_this.words.language = words;
-					callback( words );
+			var getFromServer = function() {
+				self.obtainTranslationsFromServer( args, function( translations ) {
+					_this.translations[args.source][args.target] = translations;
 					
 					if ( _this.canUseLocalStorage() ) {
 						_this.writeToLS( 'translations', _this.translations );
+						lt.debug( 'tm: wrote translations to LS' );
 					}
+					
+					callback( words );
 				} );
 			}
 			
-			if ( !this.translations.sourceLang.targetLang ) {
+			if ( this.translations.sourceLang[args.target] ) {
+				callback( this.translations[args.source][args.target] );
+			}
+			else {
 				if ( this.canUseLocalStorage() ) {
-					this.hasLocalStorage( 'translations', function( isValid ) {
-						if ( isValid ) {
-							_this.obtainFromLS( 
-								'translations',
-								function( translations ) {
-									_this.translations.sourceLang.targetLang = translations;
-									callback( translations );
-								}
-							);
+					this.cleanLocalStorage( {}, function() {
+						var translations = _this.obtainFromLS( 'translations' );
+						
+						if ( translations !== null && translations[args.source] && translations[args.source][args.target] ) {
+							callback( translations[args.source][args.target] );
 						}
 						else {
 							getFromServer();
@@ -267,9 +285,7 @@
 		},
 		
 		getSpecialWords: function( language, callback ) {
-			//var caller = arguments.callee.caller;
 			var _this = this;
-			var caller = arguments.callee.caller;
 			
 			var getFromServer = function() {
 				_this.obtainWordsFromServer(
@@ -279,18 +295,18 @@
 					function( words ) {
 						_this.words[language] = words;
 						
-						if ( this.canUseLocalStorage() ) {
+						if ( _this.canUseLocalStorage() ) {
 							_this.writeToLS( 'words', _this.words );
 							lt.debug( 'tm: wrote special words to LS' );
 						}
 						
-						callback.call( caller, words );
+						callback( words );
 					}
 				);
 			};
 			
 			if ( this.words[language] ) {
-				return this.words[language];
+				callback( this.words[language] );
 			}
 			else {
 				if ( this.canUseLocalStorage() ) {
@@ -298,7 +314,7 @@
 						var words = _this.obtainFromLS( 'words' );
 						
 						if ( words !== null && words[language] ) {
-							callback.call( caller, words[language] );
+							callback( words[language] );
 						}
 						else {
 							getFromServer();
