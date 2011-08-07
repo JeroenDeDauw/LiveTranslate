@@ -26,6 +26,10 @@ class ApiQueryTranslationMemories extends ApiQueryBase {
 		
 		$this->addTables( 'live_translate_memories' );
 		
+		if ( !in_array( 'id', $params ) ) {
+			$this->addFields( 'memory_id' );
+		}
+		
 		foreach ( $params['props'] as &$prop ) {
 			$prop = "memory_$prop";
 		}

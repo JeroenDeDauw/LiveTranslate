@@ -68,7 +68,7 @@
 		debugger;
 		_this.runningJobs = 2;
 		
-		_this.doLocalTranslation( _this.completeTranslationProcess );
+		//_this.doLocalTranslation( _this.completeTranslationProcess );
 		//_this.doRemoteTranslation( _this.completeTranslationProcess );
 	};
 	
@@ -103,7 +103,6 @@
 	};
 	
 	this.completeTranslationProcess = function() {
-		debugger;
 		if ( !_this.runningJobs-- ) {
 			lt.debug('done');
 		}
@@ -132,7 +131,6 @@
 		
 		// TODO: only run at first translation
 		_this.memory.getSpecialWords( _this.currentLang, function( specialWords ) {
-			
 			_this.specialWords = specialWords;
 			_this.insertSpecialWords( specialWords );
 			

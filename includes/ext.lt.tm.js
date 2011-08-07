@@ -18,6 +18,14 @@
 		// List of translations.
 		// { en: { nl: { foo_en: foo_nl }, de: { bar_en: bar_de } }, nl: { ... } }
 		this.translations = {};
+		
+		this.options = {
+			lsprefix: 'mw_lt_'
+		};
+		
+		this.cleanedLS = false;
+			
+		$.extend( this.options, options );
 	};
 	
 	lt.memory.prototype = {
@@ -31,51 +39,93 @@
 		},
 
 		hasLocalStorage: function( itemName ) {
-			return localStorage.getItem( itemName ) !== null;
+			return localStorage.getItem( this.options.lsprefix + itemName ) !== null;
+		},
+		
+		obtainFromLS: function( itemName ) {
+			return JSON.parse( localStorage.getItem( this.options.lsprefix +  itemName ) );
+		},
+		
+		writeToLS: function( itemName, object ) {
+			localStorage.setItem( this.options.lsprefix +  itemName, JSON.stringify( object ) )
+		},
+		
+		removeFromLS: function( itemName ) {
+			return localStorage.removeItem( this.options.lsprefix +  itemName );
 		},
 		
 		getMemoryHashes: function( args, callback ) {
+			var caller = arguments.callee.caller;
+			
 			var defaults = {
 				apiPath: window.wgScriptPath
 			};
 			
 			args = $.extend( {}, defaults, args );
 			
-			if ( !this.canUseLocalStorage() ) {
-				return false;
-			}
-			
 			$.getJSON(
 				args.apiPath + '/api.php',
 				{
-					'action': 'translationmemories',
+					'action': 'query', 
+					'list': 'translationmemories',
 					'format': 'json',
-					'props': 'version_hash'
+					'qtmprops': 'version_hash'
 				},
 				function( data ) {
 					if ( data.memories ) {
-						callback( data.memories );
+						callback.call( caller, data.memories );
 					}
 					else {
+						lt.debug( 'tm: failed to fetch memory hash' );
 						// TODO
 					}
 				}
 			);	
 		},
 		
-		localStorageIsValid: function( itemName, callback ) {
-			if ( !this.hasLocalStorage( itemName ) ) {
-				return callback.call( this, false );
+		hashesMatch: function( a, b ) {
+			for ( i in a ) {
+				if ( b[i] ) {
+					if ( a[i].memory_version_hash !== b[i].memory_version_hash ) {
+						return false;
+					}
+				}
+				else {
+					return false;
+				}
 			}
 			
-			this.getMemoryHashes(
-				{},
-				function( memories ) {
-					m = JSON.stringify( memories );
-					debugger;
-					callback.call( this, localStorage.getItem( 'lt_hash' ) == memories );
-				}
-			);
+			return true;
+		},
+		
+		cleanLocalStorage: function( options, callback ) {
+			options = $.extend( {}, { forceCheck: false }, options );
+			var caller = arguments.callee.caller;
+			
+			if ( this.cleanedLS && !options.forceCheck ) {
+				callback.call( caller );
+			}
+			else {
+				var _this = this;
+				lt.debug( 'tm: getting memory hashes' );
+				
+				this.getMemoryHashes(
+					{},
+					function( memories ) {
+						if ( _this.hashesMatch( _this.obtainFromLS( 'hash' ), memories ) ) {
+							lt.debug( 'tm: memory hashes obtained: match' );
+						}
+						else {
+							_this.removeFromLS.apply( _this, [ 'words', 'translations' ] );
+							_this.writeToLS( 'hash', memories );
+							lt.debug( 'tm: memory hashes obtained: no match; LS cleared' );
+						}
+						
+						_this.cleanedLS = true;
+						callback.call( caller );
+					}
+				);
+			}
 		},
 		
 		obtainTranslationsFromServer: function( args, callback ) {
@@ -116,6 +166,8 @@
 			
 			args = $.extend( {}, defaults, args );
 			
+			lt.debug( 'tm: obtaining special words from server, offset ' + args.offset );
+			
 			var requestArgs = {
 				'action': 'query',
 				'format': 'json',
@@ -151,24 +203,11 @@
 						);
 					}
 					else {
+						lt.debug( 'tm: obtained special words from server' );
 						callback.call( self, args.allWords );
 					}
 				}
 			);
-		},
-		
-		obtainTranslationsFromLS: function() {
-			return JSON.parse( localStorage.getItem( 'lt_memory' ) );
-		},
-		
-		writeWordsToLS: function() {
-			// TODO
-			localStorage.setItem( 'lt_words', JSON.stringify( this.words ) )
-		},
-		
-		writeTranslationsToLS: function() {
-			// TODO
-			localStorage.setItem( 'lt_translations', JSON.stringify( this.translations ) )
 		},
 		
 		/**
@@ -199,17 +238,17 @@
 					callback( words );
 					
 					if ( _this.canUseLocalStorage() ) {
-						_this.writeWordsToLS();
+						_this.writeToLS( 'translations', _this.translations );
 					}
 				} );
 			}
 			
 			if ( !this.translations.sourceLang.targetLang ) {
 				if ( this.canUseLocalStorage() ) {
-					this.localStorageIsValid( 'words', function( isValid ) {
+					this.hasLocalStorage( 'translations', function( isValid ) {
 						if ( isValid ) {
 							_this.obtainFromLS( 
-								'words',
+								'translations',
 								function( translations ) {
 									_this.translations.sourceLang.targetLang = translations;
 									callback( translations );
@@ -228,45 +267,48 @@
 		},
 		
 		getSpecialWords: function( language, callback ) {
+			//var caller = arguments.callee.caller;
+			var _this = this;
 			var caller = arguments.callee.caller;
 			
-			if ( !this.words.language ) {
+			var getFromServer = function() {
+				_this.obtainWordsFromServer(
+					{
+						language: language
+					},
+					function( words ) {
+						_this.words[language] = words;
+						
+						if ( this.canUseLocalStorage() ) {
+							_this.writeToLS( 'words', _this.words );
+							lt.debug( 'tm: wrote special words to LS' );
+						}
+						
+						callback.call( caller, words );
+					}
+				);
+			};
+			
+			if ( this.words[language] ) {
+				return this.words[language];
+			}
+			else {
 				if ( this.canUseLocalStorage() ) {
-					this.localStorageIsValid( 'translations', function( isValid ) {
-						if ( isValid ) {
-							_this.obtainFromLS( 
-								'translations',
-								function( words ) {
-									_this.words.language = words;
-									callback( words );
-								}
-							);
+					this.cleanLocalStorage( {}, function() {
+						var words = _this.obtainFromLS( 'words' );
+						
+						if ( words !== null && words[language] ) {
+							callback.call( caller, words[language] );
 						}
 						else {
-							this.obtainWordsFromServer(
-								{
-									language: language
-								},
-								function( words ) {
-									this.words.language = words;
-									
-									if ( this.canUseLocalStorage() ) {
-										this.writeWordsToLS();
-									}
-									
-									lt.debug( 'tm: obtained special words' );
-									callback.call( caller, words );
-								}
-							);
+							getFromServer();
 						}
 					} );
 				}
 				else {
-					//getFromServer();
+					getFromServer();
 				}				
 			}
-			
-			return this.translations;
 		}
 	};
 	
