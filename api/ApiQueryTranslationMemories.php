@@ -150,7 +150,7 @@ class ApiQueryTranslationMemories extends ApiQueryBase {
 	}
 
 	public function getVersion() {
-		return __CLASS__ . ': $Id:  $';
+		return __CLASS__ . ': $Id: ApiQueryTranslationMemories.php 94035 2011-08-07 03:09:52Z jeroendedauw $';
 	}	
 	
 }
