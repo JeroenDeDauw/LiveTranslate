@@ -65,11 +65,20 @@
 	};
 	
 	this.doTranslations = function() {
-		debugger;
 		_this.runningJobs = 2;
 		
-		//_this.doLocalTranslation( _this.completeTranslationProcess );
+		_this.doLocalTranslation( _this.completeTranslationProcess );
 		//_this.doRemoteTranslation( _this.completeTranslationProcess );
+	};
+	
+	this.findSpecialWords = function() {
+		var words = [];
+		
+		$.each( $( "span.notranslate" ), function( i, v ) {
+			words.push( $.trim( $( v ).text() ) );
+		} );
+		
+		return words;
 	};
 	
 	this.doLocalTranslation = function( callback ) {
@@ -77,14 +86,15 @@
 			{
 				source: _this.currentLang,
 				target: _this.select.val(),
-				words: _this.specialWords
+				words: _this.findSpecialWords()
 			},
 			function( translations ) {
 				$.each( $( "span.notranslate" ), function( i, v ) {
 					var currentText = $(v).text();
+					var trimmedText = $.trim( currentText );
 					
-					if ( translations[currentText] ) {
-						$( v ).text( translations[currentText] );
+					if ( translations[trimmedText] ) {
+						$( v ).text( currentText.replace( trimmedText, translations[trimmedText] ) );
 					}
 				});
 				

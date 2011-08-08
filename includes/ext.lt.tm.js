@@ -21,8 +21,6 @@
 	 * @since 1.2
 	 */
 	lt.memory = function( options ) {
-		var _this = this;
-		
 		// Words to not translate using the translation services.
 		// { en: [foo, bar, baz], nl: [ ... ] }
 		this.words = {};
@@ -103,6 +101,10 @@
 		},
 		
 		hashesMatch: function( a, b ) {
+			if ( a === null || b === null ) {
+				return false;
+			}
+			
 			for ( i in a ) {
 				if ( b[i] ) {
 					if ( a[i].memory_version_hash !== b[i].memory_version_hash ) {
@@ -110,6 +112,12 @@
 					}
 				}
 				else {
+					return false;
+				}
+			}
+			
+			for ( i in b ) {
+				if ( !a[i] ) {
 					return false;
 				}
 			}
@@ -134,8 +142,8 @@
 							lt.debug( 'tm: memory hashes obtained: match' );
 						}
 						else {
-							_this.removeFromLS.( 'words' );
-							_this.removeFromLS.( 'translations' );
+							_this.removeFromLS( 'words' );
+							_this.removeFromLS( 'translations' );
 							_this.writeToLS( 'hash', memories );
 							lt.debug( 'tm: memory hashes obtained: no match; LS cleared' );
 						}
@@ -157,6 +165,8 @@
 			
 			args = $.extend( {}, defaults, args );
 			
+			lt.debug( 'tm: obtaining translations from server' );
+			
 			$.getJSON(
 				args.apiPath + '/api.php',
 				{
@@ -168,14 +178,19 @@
 				},
 				function( data ) {
 					if ( data.translations ) {
-						replaceSpecialWords( data.translations );
+						lt.debug( 'tm: obtained translations from server' );
+						callback( data.translations );
 					}
-					initiateRemoteTranslating( currentLang, newLang );
+					else {
+						// TODO
+					}
 				}
 			);	
 		},
 		
 		obtainWordsFromServer: function( args, callback ) {
+			var _this = this;
+			
 			var defaults = {
 				offset: -1,
 				allWords: [],
@@ -198,8 +213,6 @@
 				requestArgs['ltcontinue'] = args.offset;
 			}
 			
-			var self = this;
-			
 			$.getJSON(
 				args.apiPath + '/api.php',
 				requestArgs,
@@ -212,7 +225,7 @@
 					}
 					
 					if ( data['query-continue'] ) {
-						self.obtainWordsFromServer(
+						_this.obtainWordsFromServer(
 							{
 							offset: data['query-continue'].livetranslate.ltcontinue,
 							language: args.language,
@@ -223,7 +236,7 @@
 					}
 					else {
 						lt.debug( 'tm: obtained special words from server' );
-						callback.call( self, args.allWords );
+						callback( args.allWords );
 					}
 				}
 			);
@@ -241,37 +254,66 @@
 				words: []
 			};
 			
+			var translations = {};
+			
 			args = $.extend( {}, defaults, args );
 			
 			if ( !this.translations[args.source] ) {
 				this.translations[args.source] = {};
 			}
 			
-			// TODO: diff needed words w/ stored ones, and only request unknowns
+			var mergeInTranslations = function( words ) {
+				lt.debug( 'tm: merging in translations' );
+				var wordsAdded = [];
+				
+				$.each( args.words, function( index, word ) {
+					if ( !!words[word] ) {
+						translations[word] = words[word];
+						_this.translations[args.source][args.target][word] = words[word];
+						wordsAdded.push( index );
+					}
+				} );
+				
+				args.words = $.grep( args.words, function( e, index ) {
+					var inn = $.inArray( index, wordsAdded ) === -1
+					return inn;
+				} );
+			};
 			
 			var getFromServer = function() {
-				self.obtainTranslationsFromServer( args, function( translations ) {
-					_this.translations[args.source][args.target] = translations;
+				_this.obtainTranslationsFromServer( args, function( obtainedTranslations ) {
+					mergeInTranslations( obtainedTranslations );
 					
 					if ( _this.canUseLocalStorage() ) {
 						_this.writeToLS( 'translations', _this.translations );
 						lt.debug( 'tm: wrote translations to LS' );
 					}
 					
-					callback( words );
+					callback( translations );
 				} );
+			};
+			
+			if ( this.translations[args.source][args.target] ) {
+				mergeInTranslations( this.translations[args.source][args.target] );
+			}
+			else {
+				this.translations[args.source][args.target] = {};
 			}
 			
-			if ( this.translations.sourceLang[args.target] ) {
-				callback( this.translations[args.source][args.target] );
+			if ( args.words.length == 0 ) {
+				callback( translations );
 			}
 			else {
 				if ( this.canUseLocalStorage() ) {
 					this.cleanLocalStorage( {}, function() {
-						var translations = _this.obtainFromLS( 'translations' );
+						lsTranslations = _this.obtainFromLS( 'translations' );
 						
-						if ( translations !== null && translations[args.source] && translations[args.source][args.target] ) {
-							callback( translations[args.source][args.target] );
+						if ( lsTranslations !== null && lsTranslations[args.source] && lsTranslations[args.source][args.target] ) {
+							mergeInTranslations( lsTranslations[args.source][args.target] );
+						}
+						
+						if ( args.words.length == 0 ) {
+							callback( translations );
 						}
 						else {
 							getFromServer();
