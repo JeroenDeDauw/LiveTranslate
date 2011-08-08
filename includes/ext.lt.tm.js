@@ -38,6 +38,14 @@
 		$.extend( this.options, options );
 	};
 	
+	lt.memory.singleton = function() {
+		if ( typeof lt.memoryinstance === 'undefined' ) {
+			lt.memoryinstance = new lt.memory();
+		}
+		
+		return lt.memoryinstance;
+	}
+	
 	lt.memory.prototype = {
 		
 		/**
@@ -275,8 +283,7 @@
 				} );
 				
 				args.words = $.grep( args.words, function( e, index ) {
-					var inn = $.inArray( index, wordsAdded ) === -1
-					return inn;
+					return $.inArray( index, wordsAdded ) === -1;
 				} );
 			};
 			
@@ -306,7 +313,7 @@
 			else {
 				if ( this.canUseLocalStorage() ) {
 					this.cleanLocalStorage( {}, function() {
-						lsTranslations = _this.obtainFromLS( 'translations' );
+						var lsTranslations = _this.obtainFromLS( 'translations' );
 						
 						if ( lsTranslations !== null && lsTranslations[args.source] && lsTranslations[args.source][args.target] ) {
 							mergeInTranslations( lsTranslations[args.source][args.target] );

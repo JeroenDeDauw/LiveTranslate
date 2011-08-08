@@ -13,7 +13,7 @@ google.setOnLoadCallback(function(){google.language.getBranding("googlebranding"
 	
 	var self = this;
 	
-	this.done = function( targetLang ){};
+	this.done = function(){};
 	
 	this.runningJobs = 0;
 	
@@ -79,7 +79,7 @@ google.setOnLoadCallback(function(){google.language.getBranding("googlebranding"
 		
 		// If the lenght is 0, the element has been translated.
 		if ( chunk.length == 0 ) {
-			this.handleTranslationCompletion( targetLang );
+			this.handleTranslationCompletion();
 			return;
 		}
 
@@ -106,7 +106,7 @@ google.setOnLoadCallback(function(){google.language.getBranding("googlebranding"
 					// If the current chunk was smaller then the max size, node translation is complete, so update text.
 					self.textAreaElement.innerHTML = chunks.join( '' ); // This is a hack to decode quotes.
 					element.replaceData( 0, element.length, self.textAreaElement.value );
-					self.handleTranslationCompletion( targetLang );
+					self.handleTranslationCompletion();
 				}
 				else {
 					// If there is more work to do, move on to the next chunk.
@@ -161,20 +161,18 @@ google.setOnLoadCallback(function(){google.language.getBranding("googlebranding"
 			}
 		} );
 		
-		this.handleTranslationCompletion( targetLang );
+		this.handleTranslationCompletion();
 	}
 	
 	/**
 	 * Should be called every time a DOM element has been translated.
 	 * By use of the runningJobs var, completion of the translation process is detected,
 	 * and further handled by this function.
-	 * 
-	 * @param {string} targetLang
 	 */
-	this.handleTranslationCompletion = function( targetLang ) {
+	this.handleTranslationCompletion = function() {
 		if ( !--this.runningJobs ) {
 			lt.debug( 'Google: translation process done' );
-			this.done( targetLang );
+			this.done();
 		}
 	}
 	

@@ -10,12 +10,11 @@
 	
 	var self = this;
 	
-	this.done = function( targetLang ){};
+	this.done = function(){};
 	
 	this.runningJobs = 0;
 	this.checkingForIdle = false;
 	this.lastCompletion;
-//	window.fooz = 0;
 	
 	/**
 	 * Determines a chunk to translate of an DOM elements contents and calls the Microsoft Translate API.
@@ -76,7 +75,7 @@
 		
 		// If the lenght is 0, the element has been translated.
 		if ( chunk.length == 0 ) {
-			this.handleTranslationCompletion( targetLang );
+			this.handleTranslationCompletion();
 			return;
 		}
 		
@@ -101,7 +100,7 @@
 				element.replaceData( 0, element.length, window.textAreaElement.value );
 
 				lt.debug( 'MS: Translated element' );
-				self.handleTranslationCompletion( targetLang );
+				self.handleTranslationCompletion();
 			}
 			else {
 				// If there is more work to do, move on to the next chunk.
@@ -178,14 +177,14 @@
 			}
 		} );
 		
-		this.handleTranslationCompletion( targetLang );
+		this.handleTranslationCompletion();
 	}
 	
-	this.invokeDone = function( targetLang ) {
+	this.invokeDone = function() {
 		lt.debug( 'MS: translation process done' );
 		lt.debug( this.runningJobs );
 		this.runningJobs = 0;
-		this.done( targetLang );		
+		this.done();		
 	}
 	
 	this.checkForIdleness = function( targetLang, hits ) {
@@ -212,10 +211,8 @@
 	 * Should be called every time a DOM element has been translated.
 	 * By use of the runningJobs var, completion of the translation process is detected,
 	 * and further handled by this function.
-	 * 
-	 * @param {string} targetLang
 	 */
-	this.handleTranslationCompletion = function( targetLang ) {
+	this.handleTranslationCompletion = function() {
 		if ( !this.checkingForIdle && this.runningJobs > 1 && this.runningJobs < 20 ) {
 			this.checkingForIdle = true;
 			setTimeout( function() { self.checkForIdleness( targetLang, 0 ); }, 250 );
@@ -226,7 +223,7 @@
 		}
 		
 		if ( !--this.runningJobs ) {
-			this.invokeDone( targetLang );
+			this.invokeDone();
 		}
 	}
 	
